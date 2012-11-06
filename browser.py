@@ -13,7 +13,25 @@ class Browser:
     VIDEO = 'VIDEO'
 
     def __init__(self):
-        self._browser = webdriver.Firefox()
+        self._br = mechanize.Browser()
+        self._set_cookie_jar()
+        self._set_options()
+
+    def _set_cookie_jar(self):
+        cj = cookielib.LWPCookieJar()
+        self._br.set_cookiejar(cj)
+
+    def _set_options(self):
+        self._br.set_handle_equiv(True)
+        self._br.set_handle_redirect(True)
+        self._br.set_handle_referer(True)
+        self._br.set_handle_robots(False)
+        self._br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+        self._br.addheaders = [('User-agent', 
+                                '''Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) 
+                                Gecko/2008071615 
+                                Fedora/3.0.1-1.fc9 
+                                Firefox/3.0.1''')]
 
     def open_gag(self, gid):
         self._browser.get("http://9gag.com/gag/%07d" % gid)
@@ -25,8 +43,9 @@ class Browser:
         except:
             pass
 
-        try:
-            self._browser.find_element_by_class_name('form-message')
+        self._soup = BeautifulSoup(self._page.read())
+
+        if self._soup.find('p', {'class': 'form-message error '}) is not None:
             return Browser.REMOVED
         except:
             pass
@@ -45,30 +64,24 @@ class Browser:
         return Browser.OKAY
 
     def get_info_pad(self):
-        info_pad = self._browser.find_element_by_class_name('post-info-pad')
-        title = info_pad.find_element_by_tag_name('h1').text.encode('utf-8')
-        uploader = info_pad.find_element_by_tag_name('p').find_element_by_tag_name('a').text.encode('utf-8')
-        num_comments = info_pad.find_element_by_class_name('comment').text.encode('utf-8')
-        num_loved = info_pad.find_element_by_class_name('loved').find_element_by_tag_name('span').text.encode('utf-8')
+        info_pad = self._soup.find('div', {'class': 'post-info-pad'})
+        title = info_pad.find('h1').string.encode('utf-8')
+        uploader = info_pad.find('p').find('a').string.encode('utf-8')
+        num_comments = info_pad.find('span', {'class': 'comment'}).string.encode('utf-8')
+        num_loved = info_pad.find('span', {'class': 'loved'}).find('span').string.encode('utf-8')
         return title, uploader, int(num_comments), int(num_loved)
 
     def get_image_url(self):
-        return 'http://d24w6bsrhbeh9d.cloudfront.net/photo/5761739_700b.jpg'
+        image_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src'].encode('utf-8')
+        return image_url
 
-    def get_external_num(self):
-        num_fb_share = 2340
-        num_fb_like = 2500
-        num_tweet = 4
-        return num_fb_share, num_fb_like, num_tweet
+    def get_share_num(self):
+        num_fb_share = self._soup.find('a', {'class': 'facebook-share-button'}).string.encode('utf-8')
+        num_tweet = self._soup.find('a', {'class': 'twitter-tweet-button'}).string.encode('utf-8')
+        return int(num_fb_share), int(num_tweet)
 
     def get_comments(self):
-        return [[('Claudio Arenas-Liotard', True, 'nice try, drug dealer.', 153),
-                 ('Johannes Antunes', True, 'i think its just viagra', 10),
-                 ('Ashley Moore', True, 'More like rapist', 5)],
-                [('David Robles', True, 'Seems like either pill he\'s still gonna show you..."how deep the rabbit hole goes"', 92),
-                 ('Joaquin Ampuero Cacic', False, 'like his anus got it?', 1)]
-               ]
+        # https://graph.facebook.com/comments/?ids=http://9gag.com/gag/5792194
+        return []
 
-    def _wait_some_time(self):
-        time.sleep(0.5)
 

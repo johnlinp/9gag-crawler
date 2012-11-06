@@ -19,9 +19,9 @@ def main():
             continue
 
         title, uploader, num_comments, num_loved = br.get_info_pad()
-        print num_comments, num_loved
         image_url = br.get_image_url()
-        num_fb_share, num_fb_like, num_tweet = br.get_external_num()
+        num_fb_share, num_tweet = br.get_share_num()
+        num_fb_like = 5566
         db.insert_gag(gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet)
 
         streams = br.get_comments()
