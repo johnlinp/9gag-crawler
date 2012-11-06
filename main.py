@@ -9,17 +9,17 @@ def main():
     db = Database()
 
     begin = db.last_gag_id() + 1
-    for gid in range(begin, 5763229):
+    begin = 5750473
+    for gid in range(begin, 9999999):
         br.open_gag(gid)
         status = br.get_status()
+        print status
         if status != Browser.OKAY:
             db.err_gag(gid, status)
             continue
 
-        uploader = br.get_uploader()
-        title = br.get_title()
+        title, uploader, num_comments, num_loved = br.get_info_pad()
         image_url = br.get_image_url()
-        num_comments, num_loved = br.get_basic_num()
         num_fb_share, num_fb_like, num_tweet = br.get_external_num()
         db.insert_gag(gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet)
 

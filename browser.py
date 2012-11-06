@@ -10,30 +10,50 @@ class Browser:
     NSFW = 'NSFW'
     REMOVED = 'REMOVED'
     ERROR = 'ERROR'
+    VIDEO = 'VIDEO'
 
     def __init__(self):
-        #self._browser = webdriver.Firefox()
-        pass
+        self._browser = webdriver.Firefox()
 
     def open_gag(self, gid):
-        pass
+        self._browser.get("http://9gag.com/gag/%07d" % gid)
 
     def get_status(self):
+        try:
+            self._browser.find_element_by_id('page-404')
+            return Browser.ERROR
+        except:
+            pass
+
+        try:
+            self._browser.find_element_by_class_name('form-message')
+            return Browser.REMOVED
+        except:
+            pass
+
+        try:
+            self._browser.find_element_by_class_name('post-info-pad')
+        except:
+            return Browser.NSFW
+
+        try:
+            self._browser.find_element_by_class_name('video-post')
+            return Browser.VIDEO
+        except:
+            pass
+
         return Browser.OKAY
 
-    def get_uploader(self):
-        return 'cr4icis'
-
-    def get_title(self):
-        return 'Found this above the urinal in the library.'
+    def get_info_pad(self):
+        info_pad = self._browser.find_element_by_class_name('post-info-pad')
+        title = 'Why doesn\'t she understand this?'
+        uploader = 'livandale'
+        num_comments = 49
+        num_loved = 16856
+        return title, uploader, num_comments, num_loved
 
     def get_image_url(self):
         return 'http://d24w6bsrhbeh9d.cloudfront.net/photo/5761739_700b.jpg'
-
-    def get_basic_num(self):
-        num_comments = 39
-        num_loved = 9618
-        return num_comments, num_loved
 
     def get_external_num(self):
         num_fb_share = 2340
@@ -48,3 +68,7 @@ class Browser:
                 [('David Robles', True, 'Seems like either pill he\'s still gonna show you..."how deep the rabbit hole goes"', 92),
                  ('Joaquin Ampuero Cacic', False, 'like his anus got it?', 1)]
                ]
+
+    def _wait_some_time(self):
+        time.sleep(0.5)
+
