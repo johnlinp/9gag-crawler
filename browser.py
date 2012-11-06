@@ -46,11 +46,11 @@ class Browser:
 
     def get_info_pad(self):
         info_pad = self._browser.find_element_by_class_name('post-info-pad')
-        title = 'Why doesn\'t she understand this?'
-        uploader = 'livandale'
-        num_comments = 49
-        num_loved = 16856
-        return title, uploader, num_comments, num_loved
+        title = info_pad.find_element_by_tag_name('h1').text.encode('utf-8')
+        uploader = info_pad.find_element_by_tag_name('p').find_element_by_tag_name('a').text.encode('utf-8')
+        num_comments = info_pad.find_element_by_class_name('comment').text.encode('utf-8')
+        num_loved = info_pad.find_element_by_class_name('loved').find_element_by_tag_name('span').text.encode('utf-8')
+        return title, uploader, int(num_comments), int(num_loved)
 
     def get_image_url(self):
         return 'http://d24w6bsrhbeh9d.cloudfront.net/photo/5761739_700b.jpg'

@@ -9,7 +9,7 @@ def main():
     db = Database()
 
     begin = db.last_gag_id() + 1
-    begin = 5750473
+    begin = 5777375
     for gid in range(begin, 9999999):
         br.open_gag(gid)
         status = br.get_status()
@@ -19,6 +19,7 @@ def main():
             continue
 
         title, uploader, num_comments, num_loved = br.get_info_pad()
+        print num_comments, num_loved
         image_url = br.get_image_url()
         num_fb_share, num_fb_like, num_tweet = br.get_external_num()
         db.insert_gag(gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet)
