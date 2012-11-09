@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import re
+import re, json
 import mechanize
 import cookielib
 from BeautifulSoup import BeautifulSoup
@@ -34,15 +34,16 @@ class Browser:
                                 Firefox/3.0.1''')]
 
     def open_gag(self, gid):
+        self._url = 'http://9gag.com/gag/%d' % gid
         try:
-            self._page = self._br.open('http://9gag.com/gag/%07d' % gid)
+            page = self._br.open(self._url)
         except KeyboardInterrupt:
             raise 
         except:
             return Browser.ERROR
 
-        content = self._page.read()
-        content = re.sub('/ >', '/>', content)
+        content = page.read()
+        content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
         self._soup = BeautifulSoup(content)
 
         if self._soup.find('p', {'class': 'form-message error '}) is not None:
@@ -58,26 +59,50 @@ class Browser:
 
     def get_info_pad(self):
         info_pad = self._soup.find('div', {'class': 'post-info-pad'})
-        title = info_pad.find('h1').string.encode('utf-8')
-        uploader = info_pad.find('p').find('a').string.encode('utf-8')
-        num_comments = info_pad.find('span', {'class': 'comment'}).string.encode('utf-8')
-        num_loved = info_pad.find('span', {'class': 'loved'}).find('span').string.encode('utf-8')
+        title = info_pad.find('h1').string
+        title = unicode(title)
+        uploader = info_pad.find('p').find('a').string
+        num_comments = info_pad.find('span', {'class': 'comment'}).string
+        num_loved = info_pad.find('span', {'class': 'loved'}).find('span').string
         return title, uploader.rstrip(), int(num_comments), int(num_loved)
 
     def get_image_url(self):
-        image_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src'].encode('utf-8')
+        image_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src']
         return image_url
 
     def get_share_num(self):
-        num_fb_share = self._soup.find('a', {'class': 'facebook-share-button'}).string.encode('utf-8')
-        num_tweet = self._soup.find('a', {'class': 'twitter-tweet-button'}).string.encode('utf-8')
+        num_fb_share = self._soup.find('a', {'class': 'facebook-share-button'}).string
+        num_tweet = self._soup.find('a', {'class': 'twitter-tweet-button'}).string
         return int(num_fb_share), int(num_tweet)
 
     def get_fb_like_num(self):
-        return 5566
+        raw_fb_like_num = self._br.open("https://graph.facebook.com/fql?q=SELECT+total_count+FROM+link_stat+WHERE+url='%s'" % self._url)
+        raw_fb_like_num = raw_fb_like_num.read()
+        raw_fb_like_num = json.loads(raw_fb_like_num)
+        return int(raw_fb_like_num['data'][0]['total_count'])
 
     def get_comments(self):
-        # https://graph.facebook.com/comments/?ids=http://9gag.com/gag/5792194
-        return []
+        raw_streams = self._br.open('https://graph.facebook.com/comments/?ids=%s&limit=1000' % self._url)
+        raw_streams = raw_streams.read()
+        raw_streams = json.loads(raw_streams)
+
+        parsed_streams = []
+        for raw_stream in raw_streams[self._url]['comments']['data']:
+            parsed_stream = []
+            parsed_stream.append({'cid': raw_stream['id'],
+                                  'uid': raw_stream['from']['id'],
+                                  'content': raw_stream['message'],
+                                  'num_like': int(raw_stream['like_count'])
+                                 })
+            if 'comments' in raw_stream:
+                for raw_reply in raw_stream['comments']['data']:
+                    parsed_stream.append({'cid': raw_reply['id'],
+                                          'uid': raw_reply['from']['id'],
+                                          'content': raw_reply['message'],
+                                          'num_like': -1
+                                         })
+            parsed_streams.append(parsed_stream)
+
+        return parsed_streams
 
 

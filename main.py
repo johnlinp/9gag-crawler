@@ -9,10 +9,9 @@ def main():
     db = Database()
 
     begin = db.last_gag_id() + 1
-    begin = 5777375
     for gid in range(begin, 9999999):
         status = br.open_gag(gid)
-        print status
+        print gid, status
         if status != Browser.OKAY:
             db.err_gag(gid, status)
             continue
@@ -25,9 +24,8 @@ def main():
 
         streams = br.get_comments()
         for sid, stream in enumerate(streams):
-            for cid, comment in enumerate(stream):
-                db.insert_comment(gid, sid, cid, comment[0], comment[1], comment[2], comment[3])
-        break
+            for rid, reply in enumerate(stream):
+                db.insert_comment(gid, sid, rid, reply['cid'], reply['uid'], reply['content'], reply['num_like'])
 
 if __name__ == '__main__':
     main()

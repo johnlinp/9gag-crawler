@@ -8,11 +8,15 @@ class Database:
         self.conn = pg.connect('ninegag', 'gardenia.csie.ntu.edu.tw', 5432, None, None, 'ninegag', 'agent#336')
 
     def add_slashes(self, string):
-        return re.sub("'", "\\\\'", string)
+        string = string.encode('utf8')
+        string = re.sub("'", "\\\\'", string)
+        string = filter(lambda x: ord(x) < 128, string)
+        return string
 
     def insert_gag(self, gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet):
         uploader = self.add_slashes(uploader)
         title = self.add_slashes(title)
+        image_url = self.add_slashes(image_url)
         self.conn.query('''INSERT INTO gag (
                                gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet
                            ) 
@@ -34,15 +38,14 @@ class Database:
         res = query.getresult()
         return res[0][0]
 
-    def insert_comment(self, gid, sid, cid, username, is_top_commenter, content, num_like):
-        username = self.add_slashes(username)
+    def insert_comment(self, gid, sid, rid, cid, uid, content, num_like):
         content = self.add_slashes(content)
         self.conn.query('''INSERT INTO comment (
-                               gid, sid, cid, username, is_top_commenter, content, num_like
+                               gid, sid, rid, cid, uid, content, num_like
                            ) 
                            VALUES (
-                               %d, %d, %d, E'%s', %d, E'%s', %d
+                               %d, %d, %d, E'%s', E'%s', E'%s', %d
                            )'''
-                           % (gid, sid, cid, username, is_top_commenter, content, num_like)
+                           % (gid, sid, rid, cid, uid, content, num_like)
         )
 
