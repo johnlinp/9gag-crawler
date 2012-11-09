@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import selenium
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-import time
+import mechanize
+import cookielib
+from BeautifulSoup import BeautifulSoup
 
 class Browser:
     OKAY = 'OKAY'
@@ -34,32 +33,21 @@ class Browser:
                                 Firefox/3.0.1''')]
 
     def open_gag(self, gid):
-        self._browser.get("http://9gag.com/gag/%07d" % gid)
-
-    def get_status(self):
         try:
-            self._browser.find_element_by_id('page-404')
-            return Browser.ERROR
+            self._page = self._br.open('http://9gag.com/gag/%07d' % gid)
         except:
-            pass
+            return Browser.ERROR
 
         self._soup = BeautifulSoup(self._page.read())
 
         if self._soup.find('p', {'class': 'form-message error '}) is not None:
             return Browser.REMOVED
-        except:
-            pass
 
-        try:
-            self._browser.find_element_by_class_name('post-info-pad')
-        except:
+        if self._soup.find('div', {'class': 'post-info-pad'}) is None:
             return Browser.NSFW
 
-        try:
-            self._browser.find_element_by_class_name('video-post')
+        if self._soup.find('div', {'class': 'video-post'}) is not None:
             return Browser.VIDEO
-        except:
-            pass
 
         return Browser.OKAY
 
@@ -69,7 +57,7 @@ class Browser:
         uploader = info_pad.find('p').find('a').string.encode('utf-8')
         num_comments = info_pad.find('span', {'class': 'comment'}).string.encode('utf-8')
         num_loved = info_pad.find('span', {'class': 'loved'}).find('span').string.encode('utf-8')
-        return title, uploader, int(num_comments), int(num_loved)
+        return title, uploader.rstrip(), int(num_comments), int(num_loved)
 
     def get_image_url(self):
         image_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src'].encode('utf-8')
@@ -79,6 +67,9 @@ class Browser:
         num_fb_share = self._soup.find('a', {'class': 'facebook-share-button'}).string.encode('utf-8')
         num_tweet = self._soup.find('a', {'class': 'twitter-tweet-button'}).string.encode('utf-8')
         return int(num_fb_share), int(num_tweet)
+
+    def get_fb_like_num(self):
+        return 5566
 
     def get_comments(self):
         # https://graph.facebook.com/comments/?ids=http://9gag.com/gag/5792194
