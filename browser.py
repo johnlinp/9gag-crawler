@@ -35,6 +35,8 @@ class Browser:
     def open_gag(self, gid):
         try:
             self._page = self._br.open('http://9gag.com/gag/%07d' % gid)
+        except KeyboardInterrupt:
+            raise 
         except:
             return Browser.ERROR
 
