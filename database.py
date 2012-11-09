@@ -10,7 +10,8 @@ class Database:
     def add_slashes(self, string):
         string = string.encode('utf8')
         string = re.sub("'", "\\\\'", string)
-        string = filter(lambda x: ord(x) < 128, string)
+        #string = filter(lambda x: ord(x) < 128, string)
+        #string = '機器人實驗場'
         return string
 
     def insert_gag(self, gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet):
@@ -39,6 +40,8 @@ class Database:
         return res[0][0]
 
     def insert_comment(self, gid, sid, rid, cid, uid, content, num_like):
+        cid = self.add_slashes(cid)
+        uid = self.add_slashes(uid)
         content = self.add_slashes(content)
         self.conn.query('''INSERT INTO comment (
                                gid, sid, rid, cid, uid, content, num_like
