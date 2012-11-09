@@ -8,7 +8,9 @@ def main():
     br = Browser()
     db = Database()
 
-    begin = db.last_gag_id() + 1
+    begin = db.last_gag_id()
+    db.delete_info(begin)
+
     for gid in range(begin, 9999999):
         status = br.open_gag(gid)
         print gid, status

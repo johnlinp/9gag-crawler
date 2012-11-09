@@ -52,3 +52,6 @@ class Database:
                            % (gid, sid, rid, cid, uid, content, num_like)
         )
 
+    def delete_info(self, gid):
+        self.conn.query('DELETE FROM gag WHERE gid=%d' % gid)
+        self.conn.query('DELETE FROM comment WHERE gid=%d' % gid)
