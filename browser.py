@@ -9,7 +9,8 @@ class Browser:
     OKAY = 'OKAY'
     NSFW = 'NSFW'
     REMOVED = 'REMOVED'
-    ERROR = 'ERROR'
+    NOT_FOUND = 'NOT_FOUND'
+    HTML_MALFORMED = 'HTML_MALFORMED'
     VIDEO = 'VIDEO'
 
     def __init__(self):
@@ -40,11 +41,14 @@ class Browser:
         except KeyboardInterrupt:
             raise 
         except:
-            return Browser.ERROR
+            return Browser.NOT_FOUND
 
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
-        self._soup = BeautifulSoup(content)
+        try:
+            self._soup = BeautifulSoup(content)
+        except:
+            return Browser.HTML_MALFORMED
 
         if self._soup.find('p', {'class': 'form-message error '}) is not None:
             return Browser.REMOVED
@@ -64,6 +68,8 @@ class Browser:
         uploader = info_pad.find('p').find('a').string
         num_comments = info_pad.find('span', {'class': 'comment'}).string
         num_loved = info_pad.find('span', {'class': 'loved'}).find('span').string
+        if num_loved == '&bull;':
+            num_loved = 0
         return title, uploader.rstrip(), int(num_comments), int(num_loved)
 
     def get_image_url(self):
