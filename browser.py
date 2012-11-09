@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 import mechanize
 import cookielib
 from BeautifulSoup import BeautifulSoup
@@ -40,7 +41,9 @@ class Browser:
         except:
             return Browser.ERROR
 
-        self._soup = BeautifulSoup(self._page.read())
+        content = self._page.read()
+        content = re.sub('/ >', '/>', content)
+        self._soup = BeautifulSoup(content)
 
         if self._soup.find('p', {'class': 'form-message error '}) is not None:
             return Browser.REMOVED
