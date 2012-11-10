@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re, json
+import time
 import mechanize
 import cookielib
 from BeautifulSoup import BeautifulSoup
@@ -79,10 +80,19 @@ class Browser:
     def get_share_num(self):
         num_fb_share = self._soup.find('a', {'class': 'facebook-share-button'}).string
         num_tweet = self._soup.find('a', {'class': 'twitter-tweet-button'}).string
+        if 'k' in num_fb_share:
+            num_fb_share = re.sub('k', '', num_fb_share)
+            num_fb_share = int(num_fb_share) * 1000
         return int(num_fb_share), int(num_tweet)
 
     def get_fb_like_num(self):
-        raw_fb_like_num = self._br.open("https://graph.facebook.com/fql?q=SELECT+total_count+FROM+link_stat+WHERE+url='%s'" % self._url)
+        okay = False
+        while not okay:
+            try:
+                raw_fb_like_num = self._br.open("https://graph.facebook.com/fql?q=SELECT+total_count+FROM+link_stat+WHERE+url='%s'" % self._url)
+                okay = True
+            except:
+                time.sleep(60)
         raw_fb_like_num = raw_fb_like_num.read()
         raw_fb_like_num = json.loads(raw_fb_like_num)
         return int(raw_fb_like_num['data'][0]['total_count'])
