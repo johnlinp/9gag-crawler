@@ -9,8 +9,8 @@ class Database:
 
     def add_slashes(self, string):
         string = string.encode('utf8')
-        string = re.sub("'", "\\\\'", string)
         string = re.sub("\\\\", "\\\\\\\\", string)
+        string = re.sub("'", "\\\\'", string)
         #string = filter(lambda x: ord(x) < 128, string)
         #string = '機器人實驗場'
         return string
