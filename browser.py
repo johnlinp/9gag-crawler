@@ -98,7 +98,13 @@ class Browser:
         return int(raw_fb_like_num['data'][0]['total_count'])
 
     def get_comments(self):
-        raw_streams = self._br.open('https://graph.facebook.com/comments/?ids=%s&limit=1000' % self._url)
+        okay = False
+        while not okay:
+            try:
+                raw_streams = self._br.open('https://graph.facebook.com/comments/?ids=%s&limit=1000' % self._url)
+                okay = True
+            except:
+                time.sleep(60)
         raw_streams = raw_streams.read()
         raw_streams = json.loads(raw_streams)
 
