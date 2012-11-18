@@ -46,6 +46,7 @@ class Browser:
 
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
+        content = re.sub('nsfw-post"', 'nsfw-post', content) # workaround for strange 9gag html...
         try:
             self._soup = BeautifulSoup(content)
         except:
