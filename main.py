@@ -1,33 +1,44 @@
 # -*- coding: utf-8 -*-
 
 import os, re
-from browser import Browser
+from browser import HotPage, OneGag, Facebook
 from database import Database
 
 def main():
-    br = Browser()
+    hot = HotPage()
+    one = OneGag()
+    fb = Facebook()
     db = Database()
 
-    begin = db.last_gag_id()
-    db.delete_info(begin)
+    while True:
+        gag_id = hot.next_gag_id()
+        print gag_id,
 
-    for gid in range(begin, 9999999):
-        status = br.open_gag(gid)
-        print gid, status
-        if status != Browser.OKAY:
-            db.err_gag(gid, status)
-            continue
+        if db.have_gag(gag_id):
+            print 'skip',
+        else:
+            status = one.open_gag(gag_id)
+            print status,
 
-        title, uploader, num_comments, num_loved = br.get_info_pad()
-        image_url = br.get_image_url()
-        num_fb_share, num_tweet = br.get_share_num()
-        num_fb_like = br.get_fb_like_num()
-        db.insert_gag(gid, uploader, title, image_url, num_comments, num_loved, num_fb_share, num_fb_like, num_tweet)
+            if status != OneGag.OKAY:
+                db.err_gag(gag_id, status)
+                print
+                continue
 
-        streams = br.get_comments()
-        for sid, stream in enumerate(streams):
-            for rid, reply in enumerate(stream):
-                db.insert_comment(gid, sid, rid, reply['cid'], reply['uid'], reply['content'], reply['num_like'])
+            title = one.get_title()
+            uploader = one.get_uploader()
+            content_url = one.get_content_url()
+            db.insert_gag(gag_id, title, uploader, content_url)
+
+        print 'getting comments...',
+        db.delete_comment(gag_id)
+        blocks = fb.get_comment_blocks(gag_id)
+        for block_id, block in enumerate(blocks):
+            for reply_id, reply in enumerate(block):
+                db.insert_comment(gag_id,
+                                  block_id, reply_id, 
+                                  reply['comment_id'], reply['user_id'], reply['content'], reply['num_like'])
+        print 'done'
 
 if __name__ == '__main__':
     main()
