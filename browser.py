@@ -112,7 +112,7 @@ class Facebook(Browser):
 
     def _make_reply_dict(self, raw_block):
         return {'comment_id': raw_block['id'],
-                'user_id': raw_block['from']['id'],
+                'user_id': raw_block['from']['id'] if raw_block['from'] != None else '',
                 'content': raw_block['message'],
                 'num_like': int(raw_block['like_count']) if 'like_count' in raw_block else -1,
                }
