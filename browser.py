@@ -7,13 +7,6 @@ import cookielib
 from BeautifulSoup import BeautifulSoup
 
 class Browser:
-    OKAY = 'OKAY'
-    NSFW = 'NSFW'
-    REMOVED = 'REMOVED'
-    NOT_FOUND = 'NOT_FOUND'
-    HTML_MALFORMED = 'HTML_MALFORMED'
-    VIDEO = 'VIDEO'
-
     def __init__(self):
         self._br = mechanize.Browser()
         self._set_cookie_jar()
@@ -35,96 +28,115 @@ class Browser:
                                 Fedora/3.0.1-1.fc9 
                                 Firefox/3.0.1''')]
 
-    def open_gag(self, gid):
-        self._url = 'http://9gag.com/gag/%d' % gid
-        try:
-            page = self._br.open(self._url)
-        except KeyboardInterrupt:
-            raise 
-        except:
-            return Browser.NOT_FOUND
-
+    def _get_page_soup(self, url):
+        okay = False
+        while not okay:
+            try:
+                page = self._br.open(url)
+                okay = True
+            except:
+                print 'sleep for mechanize error'
+                time.sleep(60)
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
-        try:
-            self._soup = BeautifulSoup(content)
-        except:
-            return Browser.HTML_MALFORMED
+        content = re.sub('nsfw-post"', 'nsfw-post', content) # workaround for strange 9gag html...
+        soup = BeautifulSoup(content)
+        return soup
+
+class HotPage(Browser):
+    def __init__(self):
+        Browser.__init__(self)
+        self._url = 'http://9gag.com/'
+        self._gag_ids = []
+
+    def next_gag_id(self):
+        if len(self._gag_ids) == 0:
+            soup = self._get_page_soup(self._url)
+            lis = soup.findAll('li')
+            for li in lis:
+                attrs = dict(li.attrs)
+                if 'gagid' in attrs:
+                    self._gag_ids.append(attrs['gagid'])
+            more = soup.find('a', {'class': 'next'})
+            self._url = 'http://9gag.com' + dict(more.attrs)['href']
+            assert len(self._gag_ids) > 0
+        return self._gag_ids.pop(0)
+
+class OneGag(Browser):
+    OKAY = 'OKAY'
+    NSFW = 'NSFW'
+    REMOVED = 'REMOVED'
+    NOT_FOUND = 'NOT_FOUND'
+    HTML_MALFORMED = 'HTML_MALFORMED'
+    VIDEO = 'VIDEO'
+
+    def open_gag(self, gag_id):
+        url = 'http://9gag.com/gag/%s' % gag_id
+        self._soup = self._get_page_soup(url)
 
         if self._soup.find('p', {'class': 'form-message error '}) is not None:
-            return Browser.REMOVED
+            return OneGag.REMOVED
 
         if self._soup.find('div', {'class': 'post-info-pad'}) is None:
-            return Browser.NSFW
+            return OneGag.NSFW
 
         if self._soup.find('div', {'class': 'video-post'}) is not None:
-            return Browser.VIDEO
+            return OneGag.VIDEO
 
-        return Browser.OKAY
+        return OneGag.OKAY
 
-    def get_info_pad(self):
-        info_pad = self._soup.find('div', {'class': 'post-info-pad'})
-        title = info_pad.find('h1').string
-        title = unicode(title)
-        uploader = info_pad.find('p').find('a').string
-        num_comments = info_pad.find('span', {'class': 'comment'}).string
-        num_loved = info_pad.find('span', {'class': 'loved'}).find('span').string
-        if num_loved == '&bull;':
-            num_loved = 0
-        return title, uploader.rstrip(), int(num_comments), int(num_loved)
+    def get_title(self):
+        title = self._soup.find('div', {'class': 'post-info-pad'}) \
+                          .find('h1') \
+                          .string
+        return unicode(title.rstrip())
 
-    def get_image_url(self):
-        image_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src']
-        return image_url
+    def get_uploader(self):
+        links = self._soup.findAll('a', {'target': '_blank'});
+        for link in links:
+            attrs = dict(link.attrs)
+            if 'href' in attrs:
+                mo = re.search('http://9gag.com/u/(\w+)', attrs['href'])
+                if mo:
+                    return mo.group(1)
+        return ''
 
-    def get_share_num(self):
-        num_fb_share = self._soup.find('a', {'class': 'facebook-share-button'}).string
-        num_tweet = self._soup.find('a', {'class': 'twitter-tweet-button'}).string
-        if 'k' in num_fb_share:
-            num_fb_share = re.sub('k', '', num_fb_share)
-            num_fb_share = int(num_fb_share) * 1000
-        return int(num_fb_share), int(num_tweet)
+    def get_content_url(self):
+        content_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src']
+        return content_url
 
-    def get_fb_like_num(self):
+class Facebook(Browser):
+    def _read_graph_api(self, url):
         okay = False
         while not okay:
             try:
-                raw_fb_like_num = self._br.open("https://graph.facebook.com/fql?q=SELECT+total_count+FROM+link_stat+WHERE+url='%s'" % self._url)
+                page = self._br.open(url)
                 okay = True
             except:
+                print 'sleep for facebook graph error'
                 time.sleep(60)
-        raw_fb_like_num = raw_fb_like_num.read()
-        raw_fb_like_num = json.loads(raw_fb_like_num)
-        return int(raw_fb_like_num['data'][0]['total_count'])
+        content = page.read()
+        return json.loads(content)
 
-    def get_comments(self):
-        okay = False
-        while not okay:
-            try:
-                raw_streams = self._br.open('https://graph.facebook.com/comments/?ids=%s&limit=1000' % self._url)
-                okay = True
-            except:
-                time.sleep(60)
-        raw_streams = raw_streams.read()
-        raw_streams = json.loads(raw_streams)
+    def _make_reply_dict(self, raw_block):
+        return {'comment_id': raw_block['id'],
+                'user_id': raw_block['from']['id'] if raw_block['from'] != None else '',
+                'content': raw_block['message'],
+                'num_like': int(raw_block['like_count']) if 'like_count' in raw_block else -1,
+               }
 
-        parsed_streams = []
-        for raw_stream in raw_streams[self._url]['comments']['data']:
-            parsed_stream = []
-            parsed_stream.append({'cid': raw_stream['id'],
-                                  'uid': raw_stream['from']['id'],
-                                  'content': raw_stream['message'],
-                                  'num_like': int(raw_stream['like_count'])
-                                 })
-            if 'comments' in raw_stream:
-                for raw_reply in raw_stream['comments']['data']:
-                    parsed_stream.append({'cid': raw_reply['id'],
-                                          'uid': raw_reply['from']['id'],
-                                          'content': raw_reply['message'],
-                                          'num_like': -1
-                                         })
-            parsed_streams.append(parsed_stream)
+    def get_comment_blocks(self, gag_id):
+        url = 'http://9gag.com/gag/%s' % gag_id
+        raw_blocks = self._read_graph_api('https://graph.facebook.com/comments/?ids=%s&limit=1000' % url)
 
-        return parsed_streams
+        parsed_blocks = []
+        for raw_block in raw_blocks[url]['comments']['data']:
+            parsed_block = []
+            parsed_block.append(self._make_reply_dict(raw_block))
+            if 'comments' in raw_block:
+                for raw_reply in raw_block['comments']['data']:
+                    parsed_block.append(self._make_reply_dict(raw_reply))
+            parsed_blocks.append(parsed_block)
 
+        return parsed_blocks
 
