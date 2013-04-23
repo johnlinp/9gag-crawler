@@ -29,7 +29,14 @@ class Browser:
                                 Firefox/3.0.1''')]
 
     def _get_page_soup(self, url):
-        page = self._br.open(url)
+        okay = False
+        while not okay:
+            try:
+                page = self._br.open(url)
+                okay = True
+            except:
+                print 'sleep for mechanize error'
+                time.sleep(60)
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
         content = re.sub('nsfw-post"', 'nsfw-post', content) # workaround for strange 9gag html...
@@ -106,7 +113,8 @@ class Facebook(Browser):
                 page = self._br.open(url)
                 okay = True
             except:
-                time.sleep(1)
+                print 'sleep for facebook graph error'
+                time.sleep(60)
         content = page.read()
         return json.loads(content)
 
