@@ -10,8 +10,8 @@ class Database:
 
     def _add_slashes(self, string):
         string = string.encode('utf8')
-        string = re.sub("\\\\", "\\\\\\\\", string)
-        string = re.sub("'", "\\\\'", string)
+        string = re.sub(r"\\", r"\\\\", string)
+        string = re.sub("'", r"\\'", string)
         return string
 
     def delete_comment(self, gag_id):
@@ -23,6 +23,8 @@ class Database:
         return res[0][0] != 0
 
     def insert_gag(self, gag_id, title, uploader, content_url):
+        print type(title), title
+        assert isinstance(title, unicode)
         title = self._add_slashes(title)
         uploader = self._add_slashes(uploader)
         content_url = self._add_slashes(content_url)
@@ -43,6 +45,7 @@ class Database:
         self.conn.query(query_cmd)
 
     def err_gag(self, gag_id, err_msg):
+        err_msg = err_msg.decode('utf8')
         self.insert_gag(gag_id, err_msg, '', '')
 
     def last_gag_id(self):
