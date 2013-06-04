@@ -12,6 +12,9 @@ def main():
 
     while True:
         gag_id = hot.next_gag_id()
+        if gag_id == None:
+            print 'Reach the limit of old Hot Page'
+            exit()
         print gag_id,
 
         if db.have_gag(gag_id):

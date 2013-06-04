@@ -58,8 +58,10 @@ class HotPage(Browser):
                 if 'gagid' in attrs:
                     self._gag_ids.append(attrs['gagid'])
             more = soup.find('a', {'class': 'next'})
+            if not more:
+                return None
             self._url = 'http://9gag.com' + dict(more.attrs)['href']
-            assert len(self._gag_ids) > 0
+            assert self._gag_ids
         return self._gag_ids.pop(0)
 
 class OneGag(Browser):
