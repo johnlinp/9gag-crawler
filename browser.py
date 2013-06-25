@@ -39,7 +39,6 @@ class Browser:
                 time.sleep(60)
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
-        content = re.sub('nsfw-post"', 'nsfw-post', content) # workaround for strange 9gag html...
         soup = BeautifulSoup(content)
         return soup
 
@@ -53,42 +52,52 @@ class HotPage(Browser):
         self._gag_ids = []
 
     def next_gag_id(self):
-        if len(self._gag_ids) == 0:
-            soup = self._get_page_soup(self._url)
-            lis = soup.findAll('li')
-            for li in lis:
-                attrs = dict(li.attrs)
-                if 'gagid' in attrs:
-                    self._gag_ids.append(attrs['gagid'])
-            more = soup.find('a', {'class': 'next'})
-            if not more:
+        if not self._gag_ids:
+            if not self._url:
                 return None
-            self._url = 'http://9gag.com' + dict(more.attrs)['href']
+            soup = self._get_page_soup(self._url)
+            articles = soup.findAll('article')
+            for article in articles:
+                attrs = dict(article.attrs)
+                if 'data-entry-id' in attrs:
+                    self._gag_ids.append(attrs['data-entry-id'])
             assert self._gag_ids
+            more = soup.find('a', {'class': 'next'})
+            self._url = None if not more else 'http://9gag.com' + dict(more.attrs)['href']
         return self._gag_ids.pop(0)
 
 class OneGag(Browser):
     OKAY = 'OKAY'
-    NSFW = 'NSFW'
-    REMOVED = 'REMOVED'
-    NOT_FOUND = 'NOT_FOUND'
+    ERROR = 'ERROR'
+
+    IMAGE = 'IMAGE' # e.g. aOqqN8v
+    VIDEO = 'VIDEO' # e.g. aeNNPrp
+    GIF = 'GIF' # e.g. aPvvdyG
+    NSFW = 'NSFW' # e.g. aXbb2Y9
+    REMOVED = 'REMOVED' # e.g. 39203
     HTML_MALFORMED = 'HTML_MALFORMED'
-    VIDEO = 'VIDEO'
 
     def open_gag(self, gag_id):
         url = 'http://9gag.com/gag/%s' % gag_id
         self._soup = self._get_page_soup(url)
 
-        if self._soup.find('p', {'class': 'form-message error '}) is not None:
-            return OneGag.REMOVED
+        oops = self._soup.find('span', {'class': 'badge-toast-message'})
+        if oops.string:
+            return OneGag.ERROR, OneGag.REMOVED
 
-        if self._soup.find('div', {'class': 'post-info-pad'}) is None:
-            return OneGag.NSFW
+        nsfw = self._soup.find('div', {'class': 'nsfw-post'})
+        if nsfw:
+            return OneGag.ERROR, OneGag.NSFW
 
-        if self._soup.find('div', {'class': 'video-post'}) is not None:
-            return OneGag.VIDEO
+        video = self._soup.find('div', {'class': 'badge-video-container'})
+        if video:
+            return OneGag.OKAY, OneGag.VIDEO
 
-        return OneGag.OKAY
+        play = self._soup.find('span', {'class': 'play'})
+        if play:
+            return OneGag.OKAY, OneGag.GIF
+
+        return OneGag.OKAY, OneGag.IMAGE
 
     def get_title(self):
         title = self._soup.find('div', {'class': 'post-info-pad'}) \
