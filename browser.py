@@ -46,6 +46,9 @@ class Browser:
 class HotPage(Browser):
     def __init__(self):
         Browser.__init__(self)
+        self.reset()
+
+    def reset(self):
         self._url = 'http://9gag.com/'
         self._gag_ids = []
 
