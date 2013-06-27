@@ -2,6 +2,7 @@
 
 import re, json
 import time
+import xmllib
 import mechanize
 import cookielib
 from BeautifulSoup import BeautifulSoup
@@ -91,32 +92,36 @@ class OneGag(Browser):
 
         video = self._soup.find('div', {'class': 'badge-video-container'})
         if video:
+            self._gag_type = OneGag.VIDEO
             return OneGag.OKAY, OneGag.VIDEO
 
         play = self._soup.find('span', {'class': 'play'})
         if play:
+            self._gag_type = OneGag.GIF
             return OneGag.OKAY, OneGag.GIF
 
+        self._gag_type = OneGag.IMAGE
         return OneGag.OKAY, OneGag.IMAGE
 
     def get_title(self):
-        title = self._soup.find('div', {'class': 'post-info-pad'}) \
-                          .find('h1') \
-                          .string
-        return unicode(title.rstrip())
-
-    def get_uploader(self):
-        links = self._soup.findAll('a', {'target': '_blank'});
-        for link in links:
-            attrs = dict(link.attrs)
-            if 'href' in attrs:
-                mo = re.search('http://9gag.com/u/(\w+)', attrs['href'])
-                if mo:
-                    return mo.group(1)
-        return ''
+        title = self._soup.find('section', {'id': 'individual-post'}) \
+                          .find('article') \
+                          .find('header') \
+                          .find('h2') \
+                          .string \
+                          .strip()
+        parser = xmllib.XMLParser()
+        return parser.translate_references(title)
 
     def get_content_url(self):
-        content_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src']
+        if self._gag_type == OneGag.IMAGE:
+            content_url = self._soup.find('img', {'class': 'badge-item-img'})['src']
+        elif self._gag_type == OneGag.GIF:
+            content_url = self._soup.find('img', {'class': 'badge-item-animated-img'})['src']
+        elif self._gag_type == OneGag.VIDEO:
+            content_url = self._soup.find('iframe', {'class': 'video-element'})['src']
+        else:
+            content_url = ''
         return content_url
 
 class Facebook(Browser):
