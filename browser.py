@@ -113,6 +113,15 @@ class OneGag(Browser):
         parser = xmllib.XMLParser()
         return parser.translate_references(title)
 
+    def get_uploader(self):
+        link = self._soup.find('section', {'id': 'individual-post'}) \
+                         .find('article') \
+                         .find('div', {'class': 'post-info'}) \
+                         .find('a')
+        if link == None or r'/u/' not in link['href']:
+            return ''
+        return link.string.strip()
+
     def get_content_url(self):
         if self._gag_type == OneGag.IMAGE:
             content_url = self._soup.find('img', {'class': 'badge-item-img'})['src']

@@ -25,24 +25,11 @@ def test_gag_info():
 
     cases = [
         (
-            'aOqqN8v',
+            'aLKKVeW',
             {
-                'title': "Something we're all guilty of.",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aOqqN8v_700b.jpg',
-            }
-        ),
-        (
-            'aeNNPrp',
-            {
-                'title': "Korean artist Kim Jung Gi - Awesome demonstration of drawing!",
-                'content_url': 'http://www.youtube.com/embed/3oQEPB0Lus4?showinfo=0&autohide=1&autoplay=1',
-            }
-        ),
-        (
-            'aPvvdyG',
-            {
-                'title': "Where does the 2nd ref come from??",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aPvvdyG_460sa.gif',
+                'title': "Steroids vs. Photoshop",
+                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aLKKVeW_700b_v2.jpg',
+                'uploader': 'ons3t',
             }
         ),
         (
@@ -50,6 +37,31 @@ def test_gag_info():
             {
                 'title': "How students feel every year on the last day of school",
                 'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/av004Kd_700b.jpg',
+                'uploader': 'godfishcute',
+            }
+        ),
+        (
+            'aOqqN8v',
+            {
+                'title': "Something we're all guilty of.",
+                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aOqqN8v_700b.jpg',
+                'uploader': '',
+            }
+        ),
+        (
+            'aeNNPrp',
+            {
+                'title': "Korean artist Kim Jung Gi - Awesome demonstration of drawing!",
+                'content_url': 'http://www.youtube.com/embed/3oQEPB0Lus4?showinfo=0&autohide=1&autoplay=1',
+                'uploader': '',
+            }
+        ),
+        (
+            'aPvvdyG',
+            {
+                'title': "Where does the 2nd ref come from??",
+                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aPvvdyG_460sa.gif',
+                'uploader': '',
             }
         ),
     ]
@@ -67,6 +79,11 @@ def test_gag_info():
         content_url = one.get_content_url()
         if content_url != answer['content_url']:
             print '"%s" != "%s"' % (content_url, answer['content_url'])
+            exit()
+
+        uploader = one.get_uploader()
+        if uploader != answer['uploader']:
+            print '"%s" != "%s"' % (uploader, answer['uploader'])
             exit()
 
         print 'correct'
