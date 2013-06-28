@@ -6,8 +6,8 @@ import psycopg2
 
 class Database:
     def __init__(self):
-        conn = psycopg2.connect(database='ninecrawl', host='gardenia.csie.ntu.edu.tw', user='ninegag', password='agent#336')
-        self._cursor = conn.cursor()
+        self._conn = psycopg2.connect(database='ninecrawl', host='gardenia.csie.ntu.edu.tw', user='ninegag', password='agent#336')
+        self._cursor = self._conn.cursor()
 
     def _add_slashes(self, string):
         string = string.encode('utf8')
@@ -17,15 +17,14 @@ class Database:
 
     def delete_comment(self, gag_id):
         self._cursor.execute("DELETE FROM comment WHERE gag_id = '%s'" % gag_id)
+        self._conn.commit()
 
     def have_gag(self, gag_id):
         self._cursor.execute("SELECT COUNT(*) FROM gag WHERE gag_id = '%s'" % gag_id)
         res = self._cursor.fetchall()
         return res[0][0] != 0
 
-    def insert_gag(self, gag_id, title, uploader, content_url):
-        print type(title), title
-        assert isinstance(title, unicode)
+    def insert_gag(self, gag_id, status, typee, title, uploader, content_url, publish_time, crawl_time, ago):
         title = self._add_slashes(title)
         uploader = self._add_slashes(uploader)
         content_url = self._add_slashes(content_url)
@@ -33,21 +32,33 @@ class Database:
         while not okay:
             try:
                 query_cmd = """INSERT INTO gag (
-                                   gag_id, title, uploader, content_url
+                                   gag_id,
+                                   status, type,
+                                   title, uploader, content_url,
+                                   publish_time, crawl_time, ago
                                ) 
                                VALUES (
-                                   E'%s', E'%s', E'%s', E'%s'
-                               )""" % (gag_id, title, uploader, content_url)
+                                   E'%s',
+                                   '%s', '%s',
+                                   E'%s', E'%s', E'%s',
+                                   '%s', '%s', '%s'
+                               )""" % (
+                                   gag_id,
+                                   status[:2], typee[:2],
+                                   title, uploader, content_url,
+                                   publish_time, crawl_time, ago
+                               )
                 okay = True
             except:
                 print 'insert_gag error'
                 print gag_id, title, uploader, content_url
                 time.sleep(60)
         self._cursor.execute(query_cmd)
+        self._conn.commit()
 
-    def err_gag(self, gag_id, err_msg):
+    def err_gag(self, gag_id, status, typee):
         err_msg = err_msg.decode('utf8')
-        self.insert_gag(gag_id, err_msg, '', '')
+        self.insert_gag(gag_id, status, typee, '', '', '', '', '', '')
 
     def last_gag_id(self):
         query = self._cursor.execute('SELECT COUNT(*) FROM gag')
@@ -75,4 +86,5 @@ class Database:
             print gag_id, block_id, reply_id, comment_id, user_id, content, num_like
             raise
         self._cursor.execute(query_cmd)
+        self._conn.commit()
 
