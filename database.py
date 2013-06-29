@@ -57,7 +57,6 @@ class Database:
         self._conn.commit()
 
     def err_gag(self, gag_id, status, typee):
-        err_msg = err_msg.decode('utf8')
         self.insert_gag(gag_id, status, typee, '', '', '', '', '', '')
 
     def last_gag_id(self):
