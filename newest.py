@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, re
+import sys, re
 from datetime import datetime
 import time
 from browser import HotPage, OneGag, Facebook
@@ -21,12 +21,15 @@ def main():
             time.sleep(60)
             continue
         print cur_gag_id,
+        sys.stdout.flush()
 
         if db.have_gag(cur_gag_id):
             print 'skip',
+            sys.stdout.flush()
         else:
             status, typee = one.open_gag(cur_gag_id)
             print status, typee,
+            sys.stdout.flush()
 
             if status != OneGag.OKAY:
                 db.err_gag(cur_gag_id, status, typee)
@@ -40,9 +43,11 @@ def main():
             crawl_time = datetime.now()
             ago = one.get_ago()
             print 'insert', 
+            sys.stdout.flush()
             db.insert_gag(cur_gag_id, status, typee, title, uploader, content_url, publish_time, crawl_time, ago)
 
         print 'getting comments...',
+        sys.stdout.flush()
         db.delete_comment(cur_gag_id)
         blocks = fb.get_comment_blocks(cur_gag_id)
         for block_id, block in enumerate(blocks):
