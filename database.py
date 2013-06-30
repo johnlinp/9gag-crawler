@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import datetime
 import time
 import psycopg2
 
@@ -57,7 +58,7 @@ class Database:
         self._conn.commit()
 
     def err_gag(self, gag_id, status, typee):
-        self.insert_gag(gag_id, status, typee, '', '', '', '', '', '')
+        self.insert_gag(gag_id, status, typee, '', '', '', datetime.min, datetime.now(), '')
 
     def last_gag_id(self):
         query = self._cursor.execute('SELECT COUNT(*) FROM gag')
