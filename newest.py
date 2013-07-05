@@ -5,17 +5,20 @@ from datetime import datetime
 import time
 from browser import HotPage, OneGag, Facebook
 from database import Database
+from logger import Logger
 
 def main():
     hot = HotPage()
     one = OneGag()
     fb = Facebook()
     db = Database()
+    log = Logger()
 
     prev_gag_id = None
     while True:
         hot.reset()
-        cur_gag_id = hot.next_gag_id()
+        Logger.gag_id = None
+        Logger.gag_id = cur_gag_id = hot.next_gag_id()
         if cur_gag_id == prev_gag_id:
             print 'sleep...'
             time.sleep(60)
@@ -32,7 +35,6 @@ def main():
             sys.stdout.flush()
 
             if status != OneGag.OKAY:
-                db.err_gag(cur_gag_id, status, typee)
                 print
                 continue
 
@@ -44,7 +46,7 @@ def main():
             ago = one.get_ago()
             print 'insert', 
             sys.stdout.flush()
-            db.insert_gag(cur_gag_id, status, typee, title, uploader, content_url, publish_time, crawl_time, ago)
+            db.insert_gag(cur_gag_id, typee, title, uploader, content_url, publish_time, crawl_time, ago)
 
         print 'getting comments...',
         sys.stdout.flush()

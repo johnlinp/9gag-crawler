@@ -7,12 +7,15 @@ import mechanize
 import cookielib
 from datetime import datetime, timedelta
 from BeautifulSoup import BeautifulSoup
+import HTMLParser
+from logger import Logger
 
 class Browser:
     def __init__(self):
         self._br = mechanize.Browser()
         self._set_cookie_jar()
         self._set_options()
+        self._log = Logger()
 
     def _set_cookie_jar(self):
         cj = cookielib.LWPCookieJar()
@@ -31,14 +34,11 @@ class Browser:
                                 Firefox/3.0.1''')]
 
     def _get_page_soup(self, url):
-        okay = False
-        while not okay:
-            try:
-                page = self._br.open(url)
-                okay = True
-            except:
-                print 'sleep for mechanize error'
-                time.sleep(60)
+        try:
+            page = self._br.open(url)
+        except:
+            self._log.error()
+            return None
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
         soup = BeautifulSoup(content)
@@ -58,6 +58,8 @@ class HotPage(Browser):
             if not self._url:
                 return None
             soup = self._get_page_soup(self._url)
+            if not soup:
+                return None
             articles = soup.findAll('article')
             for article in articles:
                 attrs = dict(article.attrs)
@@ -78,10 +80,13 @@ class OneGag(Browser):
     NSFW = 'NSFW' # e.g. aXbb2Y9
     REMOVED = 'REMOVED' # e.g. 39203
     HTML_MALFORMED = 'HTML_MALFORMED'
+    SERVER_FAULT = 'SERVER_FAULT'
 
     def open_gag(self, gag_id):
         url = 'http://9gag.com/gag/%s' % gag_id
         self._soup = self._get_page_soup(url)
+        if not self._soup:
+            return OneGag.ERROR, OneGag.SERVER_FAULT
 
         oops = self._soup.find('span', {'class': 'badge-toast-message'})
         if oops.string:
@@ -111,8 +116,11 @@ class OneGag(Browser):
                           .find('h2') \
                           .string \
                           .strip()
-        parser = xmllib.XMLParser()
-        return parser.translate_references(title)
+        #parser = HTMLParser.HTMLParser()
+        #title = parser.unescape(title)
+        return title
+        #parser = xmllib.XMLParser()
+        #return parser.translate_references(title)
 
     def get_uploader(self):
         link = self._soup.find('section', {'id': 'individual-post'}) \
@@ -187,14 +195,18 @@ class Facebook(Browser):
         url = 'http://9gag.com/gag/%s' % gag_id
         raw_blocks = self._read_graph_api('https://graph.facebook.com/comments/?ids=%s&limit=1000' % url)
 
-        parsed_blocks = []
-        for raw_block in raw_blocks[url]['comments']['data']:
-            parsed_block = []
-            parsed_block.append(self._make_reply_dict(raw_block))
-            if 'comments' in raw_block:
-                for raw_reply in raw_block['comments']['data']:
-                    parsed_block.append(self._make_reply_dict(raw_reply))
-            parsed_blocks.append(parsed_block)
+        try:
+            parsed_blocks = []
+            for raw_block in raw_blocks[url]['comments']['data']:
+                parsed_block = []
+                parsed_block.append(self._make_reply_dict(raw_block))
+                if 'comments' in raw_block:
+                    for raw_reply in raw_block['comments']['data']:
+                        parsed_block.append(self._make_reply_dict(raw_reply))
+                parsed_blocks.append(parsed_block)
+            return parsed_blocks
+        except:
+            self._log.error()
+            return []
 
-        return parsed_blocks
 
