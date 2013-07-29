@@ -35,7 +35,8 @@ def main():
             sys.stdout.flush()
 
             if status != OneGag.OKAY:
-                print
+                print 'sleep...'
+                time.sleep(30)
                 continue
 
             title = one.get_title()
