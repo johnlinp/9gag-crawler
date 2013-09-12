@@ -65,6 +65,8 @@ class HotPage(Browser):
                 attrs = dict(article.attrs)
                 if 'data-entry-id' in attrs:
                     self._gag_ids.append(attrs['data-entry-id'])
+            if not self._gag_ids:
+                print soup
             assert self._gag_ids
             more = soup.find('a', {'class': 'next'})
             self._url = None if not more else 'http://9gag.com' + dict(more.attrs)['href']
@@ -123,13 +125,12 @@ class OneGag(Browser):
         #return parser.translate_references(title)
 
     def get_uploader(self):
-        link = self._soup.find('section', {'id': 'individual-post'}) \
-                         .find('article') \
-                         .find('div', {'class': 'post-info'}) \
+        link = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
                          .find('a')
         if link == None or r'/u/' not in link['href']:
             return ''
         return link.string.strip()
+
 
     def get_content_url(self):
         if self._gag_type == OneGag.IMAGE:
@@ -143,11 +144,9 @@ class OneGag(Browser):
         return content_url
 
     def get_ago(self):
-        contents = self._soup.find('section', {'id': 'individual-post'}) \
-                        .find('article') \
-                        .find('div', {'class': 'post-info'}) \
-                        .find('p') \
-                        .contents
+        contents = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
+                             .find('p') \
+                             .contents
         for content in contents:
             if 'ago' in content:
                 return content.replace('ago', '').replace('by', '').strip()
