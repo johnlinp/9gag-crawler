@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import re, json
+import re
+import json
 import time
 import mechanize
 import cookielib
+from datetime import datetime, timedelta
 from BeautifulSoup import BeautifulSoup
+from logger import Logger
 
 class Browser:
     def __init__(self):
         self._br = mechanize.Browser()
         self._set_cookie_jar()
         self._set_options()
+        self._log = Logger()
 
     def _set_cookie_jar(self):
         cj = cookielib.LWPCookieJar()
@@ -29,81 +33,137 @@ class Browser:
                                 Firefox/3.0.1''')]
 
     def _get_page_soup(self, url):
-        okay = False
-        while not okay:
-            try:
-                page = self._br.open(url)
-                okay = True
-            except:
-                print 'sleep for mechanize error'
-                time.sleep(60)
+        try:
+            page = self._br.open(url)
+        except:
+            self._log.error()
+            return None
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
-        content = re.sub('nsfw-post"', 'nsfw-post', content) # workaround for strange 9gag html...
         soup = BeautifulSoup(content)
         return soup
 
 class HotPage(Browser):
     def __init__(self):
         Browser.__init__(self)
+        self.reset()
+
+    def reset(self):
         self._url = 'http://9gag.com/'
         self._gag_ids = []
 
     def next_gag_id(self):
-        if len(self._gag_ids) == 0:
+        if not self._gag_ids:
+            if not self._url:
+                return None
             soup = self._get_page_soup(self._url)
-            lis = soup.findAll('li')
-            for li in lis:
-                attrs = dict(li.attrs)
-                if 'gagid' in attrs:
-                    self._gag_ids.append(attrs['gagid'])
+            if not soup:
+                return None
+            articles = soup.findAll('article')
+            for article in articles:
+                attrs = dict(article.attrs)
+                if 'data-entry-id' in attrs:
+                    self._gag_ids.append(attrs['data-entry-id'])
+            if not self._gag_ids:
+                print soup
+            assert self._gag_ids
             more = soup.find('a', {'class': 'next'})
-            self._url = 'http://9gag.com' + dict(more.attrs)['href']
-            assert len(self._gag_ids) > 0
+            self._url = None if not more else 'http://9gag.com' + dict(more.attrs)['href']
         return self._gag_ids.pop(0)
 
 class OneGag(Browser):
     OKAY = 'OKAY'
-    NSFW = 'NSFW'
-    REMOVED = 'REMOVED'
-    NOT_FOUND = 'NOT_FOUND'
+    ERROR = 'ERROR'
+
+    IMAGE = 'IMAGE' # e.g. aOqqN8v
+    VIDEO = 'VIDEO' # e.g. aeNNPrp
+    GIF = 'GIF' # e.g. aPvvdyG
+    NSFW = 'NSFW' # e.g. aXbb2Y9
+    REMOVED = 'REMOVED' # e.g. 39203
     HTML_MALFORMED = 'HTML_MALFORMED'
-    VIDEO = 'VIDEO'
+    SERVER_FAULT = 'SERVER_FAULT'
 
     def open_gag(self, gag_id):
         url = 'http://9gag.com/gag/%s' % gag_id
         self._soup = self._get_page_soup(url)
+        if not self._soup:
+            return OneGag.ERROR, OneGag.SERVER_FAULT
 
-        if self._soup.find('p', {'class': 'form-message error '}) is not None:
-            return OneGag.REMOVED
+        oops = self._soup.find('span', {'class': 'badge-toast-message'})
+        if oops.string:
+            return OneGag.ERROR, OneGag.REMOVED
 
-        if self._soup.find('div', {'class': 'post-info-pad'}) is None:
-            return OneGag.NSFW
+        nsfw = self._soup.find('div', {'class': 'nsfw-post'})
+        if nsfw:
+            return OneGag.ERROR, OneGag.NSFW
 
-        if self._soup.find('div', {'class': 'video-post'}) is not None:
-            return OneGag.VIDEO
+        video = self._soup.find('div', {'class': 'badge-video-container'})
+        if video:
+            self._gag_type = OneGag.VIDEO
+            return OneGag.OKAY, OneGag.VIDEO
 
-        return OneGag.OKAY
+        play = self._soup.find('span', {'class': 'play'})
+        if play:
+            self._gag_type = OneGag.GIF
+            return OneGag.OKAY, OneGag.GIF
+
+        self._gag_type = OneGag.IMAGE
+        return OneGag.OKAY, OneGag.IMAGE
 
     def get_title(self):
-        title = self._soup.find('div', {'class': 'post-info-pad'}) \
-                          .find('h1') \
-                          .string
-        return unicode(title.rstrip())
+        title = self._soup.find('section', {'id': 'individual-post'}) \
+                          .find('article') \
+                          .find('header') \
+                          .find('h2') \
+                          .string \
+                          .strip()
+        return title
 
     def get_uploader(self):
-        links = self._soup.findAll('a', {'target': '_blank'});
-        for link in links:
-            attrs = dict(link.attrs)
-            if 'href' in attrs:
-                mo = re.search('http://9gag.com/u/(\w+)', attrs['href'])
-                if mo:
-                    return mo.group(1)
-        return ''
+        link = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
+                         .find('a')
+        if link == None or r'/u/' not in link['href']:
+            return ''
+        return link.string.strip()
+
 
     def get_content_url(self):
-        content_url = 'http:' + self._soup.find('div', {'class': 'img-wrap'}).find('img')['src']
+        if self._gag_type == OneGag.IMAGE:
+            content_url = self._soup.find('img', {'class': 'badge-item-img'})['src']
+        elif self._gag_type == OneGag.GIF:
+            content_url = self._soup.find('img', {'class': 'badge-item-animated-img'})['src']
+        elif self._gag_type == OneGag.VIDEO:
+            content_url = self._soup.find('iframe', {'class': 'video-element'})['src']
+        else:
+            content_url = ''
         return content_url
+
+    def get_ago(self):
+        contents = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
+                             .find('p') \
+                             .contents
+        for content in contents:
+            if 'ago' in content:
+                return content.replace('ago', '').replace('by', '').strip()
+        return ''
+
+    def get_post_time(self):
+        now = datetime.now()
+        ago = self.get_ago()
+        if ago == '':
+            return None
+
+        pattern = '((\d+) years?)? *((\d+) months?)? *((\d+) days?)? *((\d+) hours?)? *((\d+) mins?)?'
+        mo = re.match(pattern, ago)
+        numbers = [int(match) if match is not None else 0 for i, match in enumerate(mo.groups()) if i % 2 == 1]
+        assert len(numbers) == 5
+        delta = timedelta()
+        delta += timedelta(minutes=numbers[4])
+        delta += timedelta(hours=numbers[3])
+        delta += timedelta(days=numbers[2])
+        delta += timedelta(days=numbers[1] * 30)
+        delta += timedelta(days=numbers[0] * 365)
+        return now - delta
 
 class Facebook(Browser):
     def _read_graph_api(self, url):
@@ -129,14 +189,18 @@ class Facebook(Browser):
         url = 'http://9gag.com/gag/%s' % gag_id
         raw_blocks = self._read_graph_api('https://graph.facebook.com/comments/?ids=%s&limit=1000' % url)
 
-        parsed_blocks = []
-        for raw_block in raw_blocks[url]['comments']['data']:
-            parsed_block = []
-            parsed_block.append(self._make_reply_dict(raw_block))
-            if 'comments' in raw_block:
-                for raw_reply in raw_block['comments']['data']:
-                    parsed_block.append(self._make_reply_dict(raw_reply))
-            parsed_blocks.append(parsed_block)
+        try:
+            parsed_blocks = []
+            for raw_block in raw_blocks[url]['comments']['data']:
+                parsed_block = []
+                parsed_block.append(self._make_reply_dict(raw_block))
+                if 'comments' in raw_block:
+                    for raw_reply in raw_block['comments']['data']:
+                        parsed_block.append(self._make_reply_dict(raw_reply))
+                parsed_blocks.append(parsed_block)
+            return parsed_blocks
+        except:
+            self._log.error()
+            return []
 
-        return parsed_blocks
 
