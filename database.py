@@ -33,25 +33,21 @@ class Database:
         title = self._add_slashes(title)
         uploader = self._add_slashes(uploader)
         content_url = self._add_slashes(content_url)
-        try:
-            query_cmd = """INSERT INTO gag (
-                               gag_id, type,
-                               title, uploader, content_url,
-                               publish_time, crawl_time, ago
-                           ) 
-                           VALUES (
-                               E'%s', '%s',
-                               E'%s', E'%s', E'%s',
-                               '%s', '%s', '%s'
-                           )""" % (
-                               gag_id, typee[:2],
-                               title, uploader, content_url,
-                               publish_time, crawl_time, ago
-                           )
-        except Exception as e:
-            self.err_gag(gag_id)
-            return
-        self._cursor.execute(query_cmd)
+        self._cursor.execute("""INSERT INTO gag (
+                                    gag_id, type,
+                                    title, uploader, content_url,
+                                    publish_time, crawl_time, ago
+                                )
+                                VALUES (
+                                    %s, %s,
+                                    %s, %s, %s,
+                                    %s, %s, %s
+                                )""", (
+                                    gag_id, typee[:2],
+                                    title, uploader, content_url,
+                                    publish_time, crawl_time, ago
+                                )
+                            )
         self._conn.commit()
 
     def err_gag(self, gag_id):

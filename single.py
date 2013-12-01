@@ -38,7 +38,7 @@ def main(argv):
         ago = one.get_ago()
         print 'insert', 
         sys.stdout.flush()
-        db.insert_gag(gag_id, status, typee, title, uploader, content_url, publish_time, crawl_time, ago)
+        db.insert_gag(gag_id, typee, title, uploader, content_url, publish_time, crawl_time, ago)
 
     print 'getting comments...',
     sys.stdout.flush()
