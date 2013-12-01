@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import re, json
+import re
+import json
 import time
-import xmllib
 import mechanize
 import cookielib
 from datetime import datetime, timedelta
 from BeautifulSoup import BeautifulSoup
-import HTMLParser
 from logger import Logger
 
 class Browser:
@@ -118,11 +117,7 @@ class OneGag(Browser):
                           .find('h2') \
                           .string \
                           .strip()
-        #parser = HTMLParser.HTMLParser()
-        #title = parser.unescape(title)
         return title
-        #parser = xmllib.XMLParser()
-        #return parser.translate_references(title)
 
     def get_uploader(self):
         link = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
