@@ -138,33 +138,6 @@ class OneGag(Browser):
             content_url = ''
         return content_url
 
-    def get_ago(self):
-        contents = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
-                             .find('p') \
-                             .contents
-        for content in contents:
-            if 'ago' in content:
-                return content.replace('ago', '').replace('by', '').strip()
-        return ''
-
-    def get_post_time(self):
-        now = datetime.now()
-        ago = self.get_ago()
-        if ago == '':
-            return None
-
-        pattern = '((\d+) years?)? *((\d+) months?)? *((\d+) days?)? *((\d+) hours?)? *((\d+) mins?)?'
-        mo = re.match(pattern, ago)
-        numbers = [int(match) if match is not None else 0 for i, match in enumerate(mo.groups()) if i % 2 == 1]
-        assert len(numbers) == 5
-        delta = timedelta()
-        delta += timedelta(minutes=numbers[4])
-        delta += timedelta(hours=numbers[3])
-        delta += timedelta(days=numbers[2])
-        delta += timedelta(days=numbers[1] * 30)
-        delta += timedelta(days=numbers[0] * 365)
-        return now - delta
-
 class Facebook(Browser):
     def _read_graph_api(self, url):
         okay = False

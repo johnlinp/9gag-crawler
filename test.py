@@ -89,32 +89,6 @@ def test_gag_info():
 
         print 'correct'
 
-def test_gag_time():
-    from browser import OneGag
-
-    cases = [
-        'aLKKVeW',
-        'aPvvdyG',
-        'aQqqwbq',
-        '8392',
-        '29304',
-        '5002043',
-        'amXXjzd',
-    ]
-
-    now = datetime.now()
-    print now
-    one = OneGag()
-    for gag_id in cases:
-        print gag_id,
-        status, gag_type = one.open_gag(gag_id)
-
-        ago = one.get_ago()
-        print ago,
-
-        post_time = one.get_post_time()
-        print post_time
-
 def main(argv):
     if len(argv) != 2:
         print 'usage:'
@@ -124,8 +98,7 @@ def main(argv):
     which = argv[1]
     tests = {
         'type': test_gag_type,
-        'info': test_gag_info,
-        'time': test_gag_time,
+        'info': test_gag_info
     }
 
     if which in tests:
