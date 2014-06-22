@@ -40,7 +40,7 @@ class Browser:
             return None
         content = page.read()
         content = re.sub('/ >', '/>', content) # workaround for strange BeautifulSoup...
-        soup = BeautifulSoup(content)
+        soup = BeautifulSoup(content, convertEntities=BeautifulSoup.HTML_ENTITIES)
         return soup
 
 class HotPage(Browser):
@@ -120,7 +120,7 @@ class OneGag(Browser):
         return title
 
     def get_uploader(self):
-        link = self._soup.find('div', {'class': 'badge-entry-info post-info'}) \
+        link = self._soup.find('div', {'class': 'badge-entry-info post-afterbar-meta'}) \
                          .find('a')
         if link == None or r'/u/' not in link['href']:
             return ''

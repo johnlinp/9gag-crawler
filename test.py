@@ -29,7 +29,7 @@ def test_gag_info():
             'aLKKVeW',
             {
                 'title': "Steroids vs. Photoshop",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aLKKVeW_700b_v2.jpg',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/aLKKVeW_700b_v2.jpg',
                 'uploader': 'ons3t',
             }
         ),
@@ -37,7 +37,7 @@ def test_gag_info():
             'av004Kd',
             {
                 'title': "How students feel every year on the last day of school",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/av004Kd_700b.jpg',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/av004Kd_700b.jpg',
                 'uploader': 'godfishcute',
             }
         ),
@@ -45,7 +45,7 @@ def test_gag_info():
             'aOqqN8v',
             {
                 'title': "Something we're all guilty of.",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aOqqN8v_700b.jpg',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/aOqqN8v_700b.jpg',
                 'uploader': '',
             }
         ),
@@ -53,7 +53,7 @@ def test_gag_info():
             'aeNNPrp',
             {
                 'title': "Korean artist Kim Jung Gi - Awesome demonstration of drawing!",
-                'content_url': 'http://www.youtube.com/embed/3oQEPB0Lus4?showinfo=0&autohide=1&autoplay=1',
+                'content_url': 'http://www.youtube.com/embed/3oQEPB0Lus4?showinfo=0&autohide=1&autoplay=1&iv_load_policy=3',
                 'uploader': '',
             }
         ),
@@ -61,7 +61,7 @@ def test_gag_info():
             'aPvvdyG',
             {
                 'title': "Where does the 2nd ref come from??",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aPvvdyG_460sa.gif',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/aPvvdyG_460sa.gif',
                 'uploader': '',
             }
         ),
