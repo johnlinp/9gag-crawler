@@ -42,12 +42,10 @@ def main():
             title = one.get_title()
             uploader = one.get_uploader()
             content_url = one.get_content_url()
-            publish_time = one.get_post_time()
             crawl_time = datetime.now()
-            ago = one.get_ago()
             print 'insert', 
             sys.stdout.flush()
-            db.insert_gag(cur_gag_id, typee, title, uploader, content_url, publish_time, crawl_time, ago)
+            db.insert_gag(cur_gag_id, typee, title, uploader, content_url, None, crawl_time, None)
 
         print 'getting comments...',
         sys.stdout.flush()

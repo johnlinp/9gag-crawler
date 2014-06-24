@@ -29,7 +29,7 @@ def test_gag_info():
             'aLKKVeW',
             {
                 'title': "Steroids vs. Photoshop",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aLKKVeW_700b_v2.jpg',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/aLKKVeW_700b_v2.jpg',
                 'uploader': 'ons3t',
             }
         ),
@@ -37,7 +37,7 @@ def test_gag_info():
             'av004Kd',
             {
                 'title': "How students feel every year on the last day of school",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/av004Kd_700b.jpg',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/av004Kd_700b.jpg',
                 'uploader': 'godfishcute',
             }
         ),
@@ -45,7 +45,7 @@ def test_gag_info():
             'aOqqN8v',
             {
                 'title': "Something we're all guilty of.",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aOqqN8v_700b.jpg',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/aOqqN8v_700b.jpg',
                 'uploader': '',
             }
         ),
@@ -53,7 +53,7 @@ def test_gag_info():
             'aeNNPrp',
             {
                 'title': "Korean artist Kim Jung Gi - Awesome demonstration of drawing!",
-                'content_url': 'http://www.youtube.com/embed/3oQEPB0Lus4?showinfo=0&autohide=1&autoplay=1',
+                'content_url': 'http://www.youtube.com/embed/3oQEPB0Lus4?showinfo=0&autohide=1&autoplay=1&iv_load_policy=3',
                 'uploader': '',
             }
         ),
@@ -61,7 +61,7 @@ def test_gag_info():
             'aPvvdyG',
             {
                 'title': "Where does the 2nd ref come from??",
-                'content_url': 'http://d24w6bsrhbeh9d.cloudfront.net/photo/aPvvdyG_460sa.gif',
+                'content_url': 'http://d3dsacqprgcsqh.cloudfront.net/photo/aPvvdyG_460sa.gif',
                 'uploader': '',
             }
         ),
@@ -89,32 +89,6 @@ def test_gag_info():
 
         print 'correct'
 
-def test_gag_time():
-    from browser import OneGag
-
-    cases = [
-        'aLKKVeW',
-        'aPvvdyG',
-        'aQqqwbq',
-        '8392',
-        '29304',
-        '5002043',
-        'amXXjzd',
-    ]
-
-    now = datetime.now()
-    print now
-    one = OneGag()
-    for gag_id in cases:
-        print gag_id,
-        status, gag_type = one.open_gag(gag_id)
-
-        ago = one.get_ago()
-        print ago,
-
-        post_time = one.get_post_time()
-        print post_time
-
 def main(argv):
     if len(argv) != 2:
         print 'usage:'
@@ -124,8 +98,7 @@ def main(argv):
     which = argv[1]
     tests = {
         'type': test_gag_type,
-        'info': test_gag_info,
-        'time': test_gag_time,
+        'info': test_gag_info
     }
 
     if which in tests:
